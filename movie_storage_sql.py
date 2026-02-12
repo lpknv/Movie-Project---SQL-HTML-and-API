@@ -16,7 +16,7 @@ create table IF not exists movies
 QUERY_ALL_MOVIES = "select title, year, rating from movies"
 QUERY_INSERT_NEW_MOVIE = "insert into movies (title, year, rating) values (:title, :year, :rating)"
 QUERY_DELETE_MOVIE_BY_TITLE = "delete from movies where title = :title"
-QUERY_SEARCH_MOVIE_BY_TITLE = "select title, year, rating from movies where title = :title"
+QUERY_SEARCH_MOVIE_BY_TITLE = "select title, year, rating from movies where lower(title) like lower(:title)"
 QUERY_UPDATE_MOVIE = "update movies set rating = :rating where title = :title"
 
 # Create the engine
@@ -29,6 +29,7 @@ with engine.connect() as connection:
 
 
 def execute_query(query, params=None, commit=False, return_result=False):
+    """Execute SQL query helper function"""
     with engine.connect() as conn:
         try:
             result = conn.execute(text(query), params or {})
@@ -53,44 +54,31 @@ def list_movies():
 
 def add_movie(title, year, rating):
     """Add a new movie to the database."""
-    with engine.connect() as connection:
-        try:
-            connection.execute(text(QUERY_INSERT_NEW_MOVIE),
-                               {"title": title, "year": year, "rating": rating})
-            connection.commit()
-            print(f"Movie '{title}' added successfully.")
-        except Exception as e:
-            print(f"Error: {e}")
+    try:
+        execute_query(QUERY_INSERT_NEW_MOVIE, {"title": title, "year": year, "rating": rating}, commit=True,
+                      return_result=False)
+        print(f"Movie '{title}' added successfully.")
+    except Exception as e:
+        print(f"Error: {e}")
 
 
 def delete_movie(title):
     """Delete a movie from the database."""
-    with engine.connect() as connection:
-        try:
-            connection.execute(text(QUERY_DELETE_MOVIE_BY_TITLE),
-                               {"title": title})
-            connection.commit()
-            print(f"Movie '{title}' deleted successfully.")
-        except Exception as e:
-            print(f"Error: {e}")
-
-
-def update_movie(title, rating):
-    """Update a movie's rating in the database."""
     try:
-        execute_query(QUERY_UPDATE_MOVIE, {"title": title, "rating": rating}, commit=True)
-        print(f"Movie '{title}' updated successfully.")
+        execute_query(QUERY_DELETE_MOVIE_BY_TITLE, {"title": title}, commit=True,
+                      return_result=False)
+        print(f"Movie '{title}' deleted successfully.")
     except Exception as e:
         print(f"Error: {e}")
 
-    # with engine.connect() as connection:
-    #     try:
-    #         connection.execute(text(QUERY_UPDATE_MOVIE),
-    #                            {"title": title, "rating": rating})
-    #         connection.commit()
-    #         print(f"Movie '{title}' updated successfully.")
-    #     except Exception as e:
-    #         print(f"Error: {e}")
+
+def update_movie(title, year, rating):
+    """Update a movie's rating in the database."""
+    try:
+        execute_query(QUERY_UPDATE_MOVIE, {"title": title, "year": year, "rating": rating}, commit=True)
+        print(f"Movie '{title}' updated successfully.")
+    except Exception as e:
+        print(f"Error: {e}")
 
 
 def search_movie(title):

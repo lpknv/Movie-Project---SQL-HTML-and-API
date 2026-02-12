@@ -2,36 +2,55 @@ import random
 import movie_storage_sql as db
 
 
-def print_helper(movies):
-    if isinstance(movies, tuple):
-        print(f"{movies[0]}, {movies[1]['year']}, {movies[1]['rating']}")
+def print_helper(data):
+    """Helper function for printing movie data"""
 
-    if isinstance(movies, dict):
-        for key, val in movies.items():
-            print(f"{key}, {val['year']}, {val['rating']}")
+    # title, year, rating = None, None, None
+    print(f"{'Title':<26} {'Year':<5} {'Rating'}")
+    print("-" * 36)
 
-    if isinstance(movies, list) and len(movies) < 2:
-        print(f"{movies[0][0]}, {movies[0][1]}, {movies[0][2]}")
+    def _print(title, year, rating):
+        print(f"{title:<26} {year:<5} {rating}")
+
+    if isinstance(data, tuple):
+        _print(data[0], data[1]['year'], data[1]['rating'])
+    elif isinstance(data, dict):
+        for key, val in data.items():
+            _print(key, val['year'], val['rating'])
+    elif isinstance(data, list):
+        if len(data) > 1:
+            for item in data:
+                _print(item[0], item[1]['year'], item[1]['rating'])
+        else:
+            item = data[0]
+            _print(item[0], item[1], item[2])
+    else:
+        print(data)
 
 
 def header(text):
+    """Helper function for printing header text"""
     stars = "*" * 5
     print(f"\n{stars} {text} {stars}")
 
 
 def command_calc_median(movies):
-    movies = list(movies.values())
-    movies_length = len(movies)
+    """Calculate the median of all movies"""
+
+    movie_list = sorted(movies.values(), key=lambda x: x['rating'])
+    movies_length = len(movie_list)
 
     if movies_length % 2 == 1:
-        return movies[movies_length // 2]['rating']
+        return movie_list[movies_length // 2]['rating']
+
     else:
-        middle1 = movies[movies_length // 2 - 1]['rating']
-        middle2 = movies[movies_length // 2]['rating']
+        middle1 = movie_list[movies_length // 2 - 1]['rating']
+        middle2 = movie_list[movies_length // 2]['rating']
         return (middle1 + middle2) / 2
 
 
 def command_search_movie():
+    """Search a movie"""
     header("Search a movie")
     query = input("Enter part of movie name: ")
 
@@ -43,27 +62,30 @@ def command_search_movie():
     return None
 
 
-def command_delete_movie(title):
+def command_delete_movie(movies):
+    """Delete a movie by title"""
     header("Delete a movie")
+    command_list_movies(movies)
+    movie_name = input("\nEnter the name of a movie you want to delete: ")
 
-    movie_name = input("Enter the name of a movie you want to delete: ")
-
-    if movie_name == title:
-        db.delete_movie(title)
+    if movie_name in movies.keys():
+        db.delete_movie(movie_name)
     else:
         print("\nThe movie you want to delete is not available!\n")
 
 
 def command_list_movies(movies):
+    """Print all movies"""
     header(f"{len(movies)} movies in total")
     print_helper(movies)
 
 
 def command_add_movie():
+    """Add a new movie to the database"""
     header("Add a new movie")
 
     movie_name = input("Enter movie name: ")
-    movie_rating = float(input("Enter movie rating: "))
+    movie_rating = int(input("Enter movie rating: "))
     movie_year = int(input("Enter movie year: "))
 
     if 1 <= movie_rating <= 10:
@@ -73,30 +95,39 @@ def command_add_movie():
 
 
 def command_update_movie(movies):
+    """Update a movie"""
     header("Update a movie")
-
-    movie_name = input("Enter the name of a movie you want to update: ")
+    command_list_movies(movies)
+    movie_name = input("\nEnter the name of a movie you want to update: ")
 
     if movie_name in movies:
-        movie_rating = float(input("Enter the new rating for the movie: "))
-        db.update_movie(movie_name, movie_rating)
+        try:
+            movie_rating = int(input("Enter the new rating for the movie: "))
+            movie_year = int(input("Enter the new year for the movie: "))
+            db.update_movie(movie_name, movie_year, movie_rating)
+        except ValueError as e:
+            print(e, "Try again!")
+        except TypeError as e:
+            print(e, "Try again!")
     else:
         print("\nThe movie you want to update is not available!\n")
 
 
 def sort_movies_by_rating(movies):
+    """Sort movies by rating"""
     header("Sort the movies by rating")
-    for key, val in sorted(movies.items(), key=lambda item: item[1], reverse=True):
-        print_helper(key, val)
+    print_helper(sorted(movies.items(), key=lambda item: item[1]['rating'], reverse=True))
 
 
 def random_movie(movies):
+    """Get a random movie"""
     header("Random movie")
     movie = random.choice(list(movies.items()))
     print_helper(movie)
 
 
 def stats(movies):
+    """Print movie stats"""
     lowest = min(movies)
     highest = max(movies)
 
@@ -126,15 +157,20 @@ def stats(movies):
 
 
 def main():
-    movies = db.list_movies()
+    """Show movies from database, let user pick options to execute on the movies"""
 
     while True:
+        movies = db.list_movies()
+
         header("My Movies Database")
         print(
             "Menu:\n0. Exit\n1. List movies\n2. Add movie\n3. Delete movie\n4. Update movie\n5. Stats\n6. Random movie\n7. Search movie\n8. Movies sorted by rating")
 
         user_input = input("Enter choice (0-8): ")
 
+        if user_input == "0":
+            print("Bye!")
+            break
         if user_input == "1":
             command_list_movies(movies)
         elif user_input == "2":
@@ -151,9 +187,6 @@ def main():
             command_search_movie()
         elif user_input == "8":
             sort_movies_by_rating(movies)
-        elif user_input == "0":
-            print("Bye!")
-            break
         else:
             print("Invalid input! Try again...")
 
