@@ -131,9 +131,9 @@ def main():
     while True:
         header("My Movies Database")
         print(
-            "Menu:\n1. List movies\n2. Add movie\n3. Delete movie\n4. Update movie\n5. Stats\n6. Random movie\n7. Search movie\n8. Movies sorted by rating")
+            "Menu:\n0. Exit\n1. List movies\n2. Add movie\n3. Delete movie\n4. Update movie\n5. Stats\n6. Random movie\n7. Search movie\n8. Movies sorted by rating")
 
-        user_input = input("Enter choice (1-8 or press 'q' to quit): ")
+        user_input = input("Enter choice (0-8): ")
 
         if user_input == "1":
             command_list_movies(movies)
@@ -151,8 +151,8 @@ def main():
             command_search_movie()
         elif user_input == "8":
             sort_movies_by_rating(movies)
-        elif user_input == "q":
-            print("See ya!")
+        elif user_input == "0":
+            print("Bye!")
             break
         else:
             print("Invalid input! Try again...")
