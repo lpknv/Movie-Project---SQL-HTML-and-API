@@ -1,29 +1,38 @@
 import random
 import movie_storage_sql as db
+import textwrap
+
+from website_generator import movies_serialized, output_movies_html_file
 
 
-def print_helper(data):
+def movie_helper(data):
     """Helper function for printing movie data"""
+    print(f"{'Title':<26} {'Year':<8} {'Rating':<8} {'Poster Image URL'}")
+    print("----" * 60)
 
-    # title, year, rating = None, None, None
-    print(f"{'Title':<26} {'Year':<5} {'Rating'}")
-    print("-" * 36)
+    def _print(title, year, rating, poster_image_url):
+        poster_image_url = poster_image_url or "-"
+        print(f"{title:<26} {year:<8} {rating:<8} {poster_image_url}")
 
-    def _print(title, year, rating):
-        print(f"{title:<26} {year:<5} {rating}")
+    def pick(d, key, default="-"):
+        return d.get(key, default) if isinstance(d, dict) else default
 
     if isinstance(data, tuple):
-        _print(data[0], data[1]['year'], data[1]['rating'])
+        title, info = data[0], data[1]
+        _print(title, pick(info, "year"), pick(info, "rating"), pick(info, "poster_image_url"))
+
     elif isinstance(data, dict):
-        for key, val in data.items():
-            _print(key, val['year'], val['rating'])
+        for title, info in data.items():
+            _print(title, pick(info, "year"), pick(info, "rating"), pick(info, "poster_image_url"))
+
     elif isinstance(data, list):
-        if len(data) > 1:
-            for item in data:
-                _print(item[0], item[1]['year'], item[1]['rating'])
+        if len(data) > 1 and isinstance(data[0], tuple) and isinstance(data[0][1], dict):
+            # list of (title, info_dict)
+            for title, info in data:
+                _print(title, pick(info, "year"), pick(info, "rating"), pick(info, "poster_image_url"))
         else:
             item = data[0]
-            _print(item[0], item[1], item[2])
+            _print(item[0], item[1], item[2], item[3])
     else:
         print(data)
 
@@ -58,7 +67,7 @@ def command_search_movie():
         print("Please enter a string!")
         return None
 
-    print_helper(db.search_movie(query))
+    movie_helper(db.search_movie(query))
     return None
 
 
@@ -77,7 +86,7 @@ def command_delete_movie(movies):
 def command_list_movies(movies):
     """Print all movies"""
     header(f"{len(movies)} movies in total")
-    print_helper(movies)
+    movie_helper(movies)
 
 
 def command_add_movie():
@@ -85,11 +94,9 @@ def command_add_movie():
     header("Add a new movie")
 
     movie_name = input("Enter movie name: ")
-    movie_rating = int(input("Enter movie rating: "))
-    movie_year = int(input("Enter movie year: "))
 
-    if 1 <= movie_rating <= 10:
-        db.add_movie(movie_name, movie_year, movie_rating)
+    if movie_name:
+        db.add_movie(movie_name)
     else:
         print("Movie rating must be between 1 and 10! Try again...")
 
@@ -116,14 +123,14 @@ def command_update_movie(movies):
 def sort_movies_by_rating(movies):
     """Sort movies by rating"""
     header("Sort the movies by rating")
-    print_helper(sorted(movies.items(), key=lambda item: item[1]['rating'], reverse=True))
+    movie_helper(sorted(movies.items(), key=lambda item: item[1]['rating'], reverse=True))
 
 
 def random_movie(movies):
     """Get a random movie"""
     header("Random movie")
     movie = random.choice(list(movies.items()))
-    print_helper(movie)
+    movie_helper(movie)
 
 
 def stats(movies):
@@ -149,11 +156,11 @@ def stats(movies):
 
     if best_movies:
         print("3. Best movie(s) =>")
-        print_helper(best_movies)
+        movie_helper(best_movies)
 
     if worst_movies:
         print("4. Worst movie(s) =>")
-        print_helper(worst_movies)
+        movie_helper(worst_movies)
 
 
 def main():
@@ -163,8 +170,20 @@ def main():
         movies = db.list_movies()
 
         header("My Movies Database")
-        print(
-            "Menu:\n0. Exit\n1. List movies\n2. Add movie\n3. Delete movie\n4. Update movie\n5. Stats\n6. Random movie\n7. Search movie\n8. Movies sorted by rating")
+
+        print(textwrap.dedent("""
+            Menu:
+            0. Exit
+            1. List movies
+            2. Add movie
+            3. Delete movie
+            4. Update movie
+            5. Stats
+            6. Random movie
+            7. Search movie
+            8. Movies sorted by rating
+            9. Generate website
+        """))
 
         user_input = input("Enter choice (0-8): ")
 
@@ -187,6 +206,15 @@ def main():
             command_search_movie()
         elif user_input == "8":
             sort_movies_by_rating(movies)
+        elif user_input == "9":
+            output_movies_html_file(
+                "_static/index_template.html",
+                "_static/movies.html",
+                {
+                    "__TEMPLATE_TITLE__":      "My Movie App",
+                    "__TEMPLATE_MOVIE_GRID__": movies_serialized(movies)
+                }
+            )
         else:
             print("Invalid input! Try again...")
 
