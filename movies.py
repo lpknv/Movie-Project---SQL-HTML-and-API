@@ -219,11 +219,3 @@ def main():
             print("Invalid input! Try again...")
 
         input("\nPress enter to continue")
-
-
-if __name__ == "__main__":
-    try:
-        main()
-    # print some nice message when quitting the program using keyboard interrupt
-    except KeyboardInterrupt:
-        print("See ya!")
