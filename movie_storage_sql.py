@@ -97,10 +97,10 @@ def delete_movie(title):
         print(f"Error: {e}")
 
 
-def update_movie(title, year, rating):
+def update_movie(title, rating):
     """Update a movie's rating in the database."""
     try:
-        execute_query(QUERY_UPDATE_MOVIE, {"title": title, "year": year, "rating": rating}, commit=True)
+        execute_query(QUERY_UPDATE_MOVIE, {"title": title, "rating": rating}, commit=True)
         print(f"Movie '{title}' updated successfully.")
     except Exception as e:
         print(f"Error: {e}")

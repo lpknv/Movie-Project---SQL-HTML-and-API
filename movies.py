@@ -98,7 +98,7 @@ def command_add_movie():
     if movie_name:
         db.add_movie(movie_name)
     else:
-        print("Movie rating must be between 1 and 10! Try again...")
+        print("Movie name cannot be empty! Try again...")
 
 
 def command_update_movie(movies):
@@ -110,8 +110,7 @@ def command_update_movie(movies):
     if movie_name in movies:
         try:
             movie_rating = int(input("Enter the new rating for the movie: "))
-            movie_year = int(input("Enter the new year for the movie: "))
-            db.update_movie(movie_name, movie_year, movie_rating)
+            db.update_movie(movie_name, movie_rating)
         except ValueError as e:
             print(e, "Try again!")
         except TypeError as e:
@@ -135,8 +134,8 @@ def random_movie(movies):
 
 def stats(movies):
     """Print movie stats"""
-    lowest = min(movies)
-    highest = max(movies)
+    lowest = min(movies.values(), key=lambda movie: movie["rating"])
+    highest = max(movies.values(), key=lambda movie: movie["rating"])
 
     sum_ratings = sum([movie[1]['rating'] for movie in movies.items()])
 
